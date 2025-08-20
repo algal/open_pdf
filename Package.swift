@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "open_pdf",
     platforms: [
-        .macOS(.v10_15)
+        .macOS(.v11)
     ],
     targets: [
         .executableTarget(

@@ -43,25 +43,28 @@ guard FileManager.default.fileExists(atPath: fileURL.path) else {
 }
 
 // 3. Execute AppleScript to open the file and go to the page.
-runAppleScript(forFile: fileURL.path, andPage: pageNumber)
+let success = runAppleScript(forFile: fileURL.path, andPage: pageNumber)
 
-// 4. Keep the program alive to allow the async AppleScript to execute.
-// The AppleScript is dispatched to a background thread, so the main thread
-// needs to wait for it to complete. A RunLoop is a good way to do this.
-RunLoop.main.run(until: Date(timeIntervalSinceNow: 5.0))
-
-log("[LOG] Program finished.")
+// 4. Check result and exit.
+if success {
+    log("[LOG] Program finished successfully.")
+    exit(0)
+} else {
+    // Error message was already printed by the helper function.
+    exit(1)
+}
 
 
 // --- Helper Function ---
 
-/// Compiles and executes an AppleScript to control Preview.
-func runAppleScript(forFile filePath: String, andPage page: String) {
-    log("[LOG] Preparing to run AppleScript.")
-    let sanitizedPage = page.filter { "0123456789".contains($0) }
+/// Executes an AppleScript using the `osascript` command-line tool.
+/// Returns true on success, false on failure.
+func runAppleScript(forFile filePath: String, andPage page: String) -> Bool {
+    log("[LOG] Preparing to run AppleScript via osascript.")
+    let sanitizedPage = page.filter { "0123-456789".contains($0) }
     guard !sanitizedPage.isEmpty else {
         print("Error: Invalid page number provided: '\(page)'")
-        exit(1)
+        return false
     }
     log("[LOG] Sanitized page number: '\(sanitizedPage)'")
 
@@ -81,27 +84,37 @@ func runAppleScript(forFile filePath: String, andPage page: String) {
     end tell
     """
 
-    log("[LOG] Creating NSAppleScript object.")
-    if let script = NSAppleScript(source: source) {
-        // Run the script on a background thread to avoid blocking the main thread.
-        DispatchQueue.global(qos: .userInitiated).async {
-            var errorInfo: NSDictionary?
-            _ = script.executeAndReturnError(&errorInfo)
-            
-            if let error = errorInfo {
-                DispatchQueue.main.async {
-                    print("AppleScript Error: \(error)")
-                    exit(1)
-                }
-            } else {
-                DispatchQueue.main.async {
-                    log("[SUCCESS] AppleScript executed successfully.")
-                    exit(0)
-                }
-            }
+    log("[LOG] Creating Process to run osascript.")
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+    // Pass the script source via standard input
+    process.arguments = ["-"]
+
+    let pipe = Pipe()
+    process.standardInput = pipe
+
+    do {
+        try process.run()
+        // Write the script to the process's standard input
+        if let data = source.data(using: .utf8) {
+            try pipe.fileHandleForWriting.write(contentsOf: data)
+            try pipe.fileHandleForWriting.close()
         }
-    } else {
-        print("Error: Could not create NSAppleScript object.")
-        exit(1)
+        
+        process.waitUntilExit()
+        
+        let exitCode = process.terminationStatus
+        log("[LOG] osascript exited with code: \(exitCode)")
+        
+        if exitCode == 0 {
+            log("[SUCCESS] osascript executed successfully.")
+            return true
+        } else {
+            print("Error: osascript failed with exit code \(exitCode).")
+            return false
+        }
+    } catch {
+        print("Error: Failed to run osascript process: \(error)")
+        return false
     }
 }
