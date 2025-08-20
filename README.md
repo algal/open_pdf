@@ -21,7 +21,7 @@ $ cp .build/release/open_pdf ~/bin # copy it into your path
 
 ## why
 
-If you're using an agentic workflow where PDF rendering is a target, then it is easy to automate buiding the PDF, easy to automate screenshotting an app (thanks to [peekaboo](https://peekaboo.dev) etc., but you might also need to to automate opening a PDF to a particular page number. And you might not want to install Adobe Reader because its installer is so presumptuous.
+If you're using an agentic workflow where PDF rendering is a target, then it is easy to automate buiding the PDF, easy to automate screenshotting an app (thanks to [peekaboo](https://peekaboo.dev) etc.), but you will also need to to automate opening a PDF to a particular page number. You might not want to install Adobe Reader because its installer is so presumptuous.
 
 ## how?
 
@@ -43,7 +43,7 @@ tell application "Preview"
 end tell
 ```
 
-I wrapped it in an executable, rather than using an honest bash script, because it seems to work around intermittent permissions issues. But this implementation pattern might be useful if you care to embed applescript in your own executable.
+I wrapped it in an executable, rather than using an honest bash script, because this seems to work around intermittent permissions issues. If bash simply worked, that would be simpler and therefore better. But this implementation pattern might be useful if you care to embed applescript in your own executable.
 
 
 
