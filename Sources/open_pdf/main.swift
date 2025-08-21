@@ -1,6 +1,31 @@
 import AppKit
 import Foundation
 
+// MARK: - Undocumented API for proper permission handling
+// From https://steipete.me/posts/2025/applescript-cli-macos-complete-guide
+
+/// Undocumented function to disclaim responsibility from parent process
+private func responsibility_spawnattrs_setdisclaim(_ attrs: UnsafeMutableRawPointer?, _ disclaim: Int32) -> Int32 {
+    let handle = dlopen(nil, RTLD_NOW)
+    defer { dlclose(handle) }
+    
+    guard let symbol = dlsym(handle, "responsibility_spawnattrs_setdisclaim") else {
+        return -1
+    }
+    
+    let function = unsafeBitCast(symbol, to: (@convention(c) (UnsafeMutableRawPointer?, Int32) -> Int32).self)
+    return function(attrs, disclaim)
+}
+
+/// Setup responsibility disclaimer for this process
+private func setupResponsibilityDisclaimer() {
+    var attrs: posix_spawnattr_t?
+    guard posix_spawnattr_init(&attrs) == 0 else { return }
+    defer { posix_spawnattr_destroy(&attrs) }
+    
+    _ = responsibility_spawnattrs_setdisclaim(&attrs, 1)
+}
+
 /// Prints a message only when the code is compiled in DEBUG mode.
 func log(_ message: String) {
     #if DEBUG
@@ -10,6 +35,10 @@ func log(_ message: String) {
 
 // --- Main Logic ---
 log("[LOG] Starting execution.")
+
+// Setup responsibility disclaimer for proper permission handling
+setupResponsibilityDisclaimer()
+log("[LOG] Responsibility disclaimer setup complete.")
 
 // 1. Argument Parsing
 guard CommandLine.arguments.count > 1 else {

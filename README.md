@@ -43,7 +43,7 @@ tell application "Preview"
 end tell
 ```
 
-I wrapped it in an executable, rather than using an honest bash script, because this seems to work around intermittent permissions issues. If bash simply worked, that would be simpler and therefore better. But this implementation pattern might be useful if you care to embed applescript in your own executable.
+I wrapped it in an executable, rather than using an honest bash script, because this seems to [work around](https://steipete.me/posts/2025/applescript-cli-macos-complete-guide) intermittent permissions issues. If bash simply worked, that would be simpler and therefore better. But this implementation pattern might be useful if you care to embed applescript in your own executable.
 
 
 
